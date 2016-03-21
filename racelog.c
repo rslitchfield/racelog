@@ -110,7 +110,7 @@ int  main(void)
     }
     pthread_setname_np(thread[2], "MPU6050_BMP180");
 
-    if (wiringPiSetup() >= 0)
+    if (wiringPiSetupGpio() >= 0)
     {
         if (wiringPiISR(TACH_PIN, INT_EDGE_RISING, &tachInterrupt) < 0)
         {
@@ -225,6 +225,7 @@ int  main(void)
                 // process tach counter once every 6 30 Hz loops (5 Hz)
                 if (++sampleCount >= sampleCounts)
                 {
+                    sampleCount = 0;
                     pthread_mutex_lock(&tachLock);
                     tachDiff = tachCounter - lastTach;
                     pthread_mutex_unlock(&tachLock);
