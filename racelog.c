@@ -26,14 +26,20 @@
 
 #define	TACH_PIN 27  // Pin 13 = BCM 27; WiringPi GPIO 2
 
-int    run_log;
+int run_log;
+struct timespec gettime_spark;
+int64_t spark_time[8];
+static volatile int filter_count = 0;
 static volatile unsigned short tachCounter = 0;
 pthread_mutex_t tachLock;
 
 void tachInterrupt (void)
 {
+    clock_gettime(CLOCK_REALTIME, &gettime_spark);
+    
     pthread_mutex_lock(&tachLock);
     ++tachCounter;
+    spark_time[filter_count++ & 7] = gettime_spark.tv_nsec;
     pthread_mutex_unlock(&tachLock);
 }
 
@@ -63,6 +69,7 @@ int  main(void)
     unsigned short lastTach = 0;
     unsigned short tachDiff = 0;
     unsigned short tach = 0;
+    int64_t tach2 = 0;
     char sampleCount = 0;
     const unsigned char sampleCounts = 6;
     const unsigned short rpmPerCount = 1800 / 3 / sampleCounts;  // samplesPerMinute(1800) / 
@@ -161,6 +168,7 @@ int  main(void)
 //        fprintf(logFile, "record,");
 
         fprintf(logFile, "tach,");
+        fprintf(logFile, "tach2");
 
         fprintf(logFile, "gpsRun,");
 //        fprintf(logFile, "lastFixTime,");
@@ -236,7 +244,23 @@ int  main(void)
                         tach = tachDiff * rpmPerCount;
                     }
                 }
-
+                // process tach timer every 30 Hz loop (average last 8 sparks)
+                pthread_mutex_lock(&tachLock);
+                seven_spark_time = spark_time[spark_count] - spark_time[spark_count ? spark_count - 1 : 7];
+                pthread_mutex_unlock(&tachLock);
+                if (seven_spark_time < 0 )
+                {
+                    seven_spark_time += 1000000000;
+                }
+                if (seven_spark_time)
+                {
+                    tach2 = 140000000 / ( (seven_spark_time + 500) / 1000);
+                }
+                else
+                {
+                    tack2 = 0;
+                }
+                
                 // take snapshot of DataQ data generated in seperate thread
                 pthread_mutex_lock(&myDataQ->lock);
                 snapDataQ.running = myDataQ->running;
@@ -258,6 +282,7 @@ int  main(void)
 
                 // log Tachometer sample
                 fprintf(logFile, ",% 4d", tach);
+                fprintf(logFile, ",% 4d", tach2);
 
                 // take snapshot of GPS data generated in seperate thread
                 pthread_mutex_lock(&mySituation->lock);
