@@ -603,32 +603,39 @@ void processNMEALine(char * l)
                         mySituation.minute = min;
                         mySituation.second = sec;
                         pthread_mutex_unlock(&mySituation.lock);
-                    }
-                }
-
+                
                 // field 3 is date
-                if (strlen(x[3]) != 6)
-                {
-                     fprintf(stderr, "PUBX type 04 message less than 6 characters, %d characters parsed\r\n", strlen(x[3]));
-                }
-                    // Date of Fix, i.e 191115 =  19 November 2015 UTC  field 9
-                sec = atoi(&x[3][4]);
-                x[3][4] = '\0';
-                min = atoi(&x[3][2]);
-                x[3][2] = '\0';
-                hr = atoi(x[3]);
-                if (sec < 15 || min < 1 || min > 12 || hr < 1 || hr > 31)
-                {
-                    fprintf(stderr, "PUBX type 04 message invalid date, %d day %d month %d year\r\n", hr, min, sec);
-                }
-                else
-                {
-                    pthread_mutex_lock(&mySituation.lock);
-                    mySituation.day = hr;
-                    mySituation.month = min;
-                    mySituation.year = sec + 2000;
-                    pthread_mutex_unlock(&mySituation.lock);
-                }
+                        if (strlen(x[3]) != 6)
+                        {
+                            fprintf(stderr, "PUBX type 04 message less than 6 characters, %d characters parsed\r\n", strlen(x[3]));
+                        }
+                        else
+                        {
+                            // Date of Fix, i.e 191115 =  19 November 2015 UTC  field 9
+                            sec = atoi(&x[3][4]);
+                            x[3][4] = '\0';
+                            min = atoi(&x[3][2]);
+                            x[3][2] = '\0';
+                            hr = atoi(x[3]);
+                            if (sec < 15 || min < 1 || min > 12 || hr < 1 || hr > 31)
+                            {
+                                fprintf(stderr, "PUBX type 04 message invalid date, %d day %d month %d year\r\n", hr, min, sec);
+                            }
+                            else
+                            {
+                                pthread_mutex_lock(&mySituation.lock);
+                                mySituation.day = hr;
+                                mySituation.month = min;
+                                mySituation.year = sec + 2000;
+                                pthread_mutex_unlock(&mySituation.lock);
+                       
+                                // <to do> check and set system clock
+                                // system(dateTimeStr_cmd);
+                                // "date -s 20160102 15:04:05.000 UTC"
+                            }
+                        }
+                    }
+                }   
             }
         }
     }
