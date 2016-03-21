@@ -156,7 +156,7 @@ int  main(void)
         fprintf(logFile, "steer,");
         fprintf(logFile, "throttle,");
         fprintf(logFile, "brake,");
-        fprintf(logFile, "clutch,");
+        fprintf(logFile, "spare,");
         fprintf(logFile, "event,");
 //        fprintf(logFile, "record,");
 
